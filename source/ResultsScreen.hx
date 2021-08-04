@@ -18,7 +18,6 @@ import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 import flixel.util.FlxColor;
-import io.newgrounds.NG;
 import lime.app.Application;
 import lime.utils.Assets;
 import flixel.math.FlxMath;
@@ -28,14 +27,12 @@ import flixel.input.FlxKeyManager;
 
 using StringTools;
 
-class ResultsScreen extends FlxSubState
+class ResultsScreen extends MusicBeatSubstate
 {
     public var background:FlxSprite;
     public var text:FlxText;
 
     public var anotherBackground:FlxSprite;
-    public var graph:HitGraph;
-    public var graphSprite:OFLSprite;
 
     public var comboText:FlxText;
     public var contText:FlxText;
@@ -43,7 +40,6 @@ class ResultsScreen extends FlxSubState
 
     public var music:FlxSound;
 
-    public var graphData:BitmapData;
 
     public var ranking:String;
     public var accuracy:String;
@@ -93,16 +89,6 @@ class ResultsScreen extends FlxSubState
         anotherBackground.scrollFactor.set();
         anotherBackground.alpha = 0;
         add(anotherBackground);
-        
-        graph = new HitGraph(FlxG.width - 500,45,495,240);
-        graph.alpha = 0;
-
-        graphSprite = new OFLSprite(FlxG.width - 510,45,460,240,graph);
-
-        graphSprite.scrollFactor.set();
-        graphSprite.alpha = 0;
-        
-        add(graphSprite);
 
 
         var sicks = HelperFunctions.truncateFloat(PlayState.sicks / PlayState.goods,1);
@@ -131,11 +117,7 @@ class ResultsScreen extends FlxSubState
             var diff = obj[3];
             var judge = obj2;
             mean += diff;
-            if (obj[1] != -1)
-                graph.addToHistory(diff, judge, obj3);
         }
-
-        graph.update();
 
         mean = HelperFunctions.truncateFloat(mean / PlayState.rep.replay.songNotes.length,2);
 
@@ -152,10 +134,7 @@ class ResultsScreen extends FlxSubState
         FlxTween.tween(comboText, {y:145},0.5,{ease: FlxEase.expoInOut});
         FlxTween.tween(contText, {y:FlxG.height - 45},0.5,{ease: FlxEase.expoInOut});
         FlxTween.tween(settingsText, {y:FlxG.height - 35},0.5,{ease: FlxEase.expoInOut});
-        FlxTween.tween(anotherBackground, {alpha: 0.6},0.5, {onUpdate: function(tween:FlxTween) {
-            graph.alpha = FlxMath.lerp(0,1,tween.percent);
-            graphSprite.alpha = FlxMath.lerp(0,1,tween.percent);
-        }});
+        FlxTween.tween(anotherBackground, {alpha: 0.6},0.5);
 
         cameras = [FlxG.cameras.list[FlxG.cameras.list.length - 1]];
 
@@ -171,8 +150,17 @@ class ResultsScreen extends FlxSubState
 			music.volume += 0.01 * elapsed;
 
         // keybinds
+        var tapped:Bool = false;
 
-        if (PlayerSettings.player1.controls.ACCEPT)
+        var accpet = controls.ACCEPT || tapped;
+        
+        for (touch in FlxG.touches.list)
+        {
+            if (touch.justPressed)
+                tapped = true;
+        }
+
+        if (accpet)
         {
             music.fadeOut(0.3);
             

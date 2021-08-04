@@ -42,13 +42,10 @@ class OptionsMenu extends MusicBeatState
 		new OptionCategory("Appearance", [
 			new DistractionsAndEffectsOption("Toggle stage distractions that can hinder your gameplay."),
 			new CamZoomOption("Toggle the camera zoom in-game."),
-			#if desktop
-			new RainbowFPSOption("Make the FPS Counter Rainbow"),
 			new AccuracyOption("Display accuracy information."),
 			new NPSDisplayOption("Shows your current Notes Per Second."),
 			new SongPositionOption("Show the songs current position (as a bar)"),
-			new CpuStrums("CPU's strumline lights up when a note hits it."),
-			#end
+			new CpuStrums("CPU's strumline lights up when a note hits it.")
 		]),
 		
 		new OptionCategory("Misc", [
@@ -61,7 +58,8 @@ class OptionsMenu extends MusicBeatState
 			new ScoreScreen("Show the score screen after the end of a song"),
 			new ShowInput("Display every single input in the score screen."),
 			new Optimization("No backgrounds, no characters, centered notes, no player 2."),
-			new BotPlay("Showcase your charts and mods with autoplay."),
+			new BotPlay("Showcase your charts and mods with autoplay.") #if android ,
+			new McontrolsOption('Change your control scheme!') #end
 		])
 		
 	];
@@ -113,7 +111,9 @@ class OptionsMenu extends MusicBeatState
 
 		FlxTween.tween(versionShit,{y: FlxG.height - 18},2,{ease: FlxEase.elasticInOut});
 		FlxTween.tween(blackBorder,{y: FlxG.height - 18},2, {ease: FlxEase.elasticInOut});
-
+		#if android
+		addVirtualPad(UP_DOWN, A_B);
+		#end
 		super.create();
 	}
 
@@ -162,9 +162,9 @@ class OptionsMenu extends MusicBeatState
 				}
 			}
 			
-			if (FlxG.keys.justPressed.UP)
+			if (controls.UP_P)
 				changeSelection(-1);
-			if (FlxG.keys.justPressed.DOWN)
+			if (controls.DOWN_P)
 				changeSelection(1);
 			
 			if (isCat)

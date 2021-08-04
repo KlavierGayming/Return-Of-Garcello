@@ -71,6 +71,7 @@ import Discord.DiscordClient;
 import Sys;
 import sys.FileSystem;
 #end
+import ui.Mobilecontrols;
 
 using StringTools;
 
@@ -103,6 +104,7 @@ class PlayState extends MusicBeatState
 
 	var songLength:Float = 0;
 	var kadeEngineWatermark:FlxText;
+	var mcontrols:Mobilecontrols;
 
 	
 	
@@ -273,6 +275,7 @@ class PlayState extends MusicBeatState
 	public function removeObject(object:FlxBasic) { remove(object); }
 
 
+	
 	override public function create()
 	{
 		instance = this;
@@ -1295,6 +1298,29 @@ class PlayState extends MusicBeatState
 		if (loadRep)
 			replayTxt.cameras = [camHUD];
 
+		#if android
+		mcontrols = new Mobilecontrols();
+		switch (mcontrols.mode)
+		{
+			case VIRTUALPAD_RIGHT | VIRTUALPAD_LEFT | VIRTUALPAD_CUSTOM:
+				controls.setVirtualPad(mcontrols._virtualPad, FULL, NONE);
+			case HITBOX:
+				controls.setHitBox(mcontrols._hitbox);
+			default:
+		}
+		trackedinputs = controls.trackedinputs;
+		controls.trackedinputs = [];
+
+		var camcontrol = new FlxCamera();
+		FlxG.cameras.add(camcontrol);
+		camcontrol.bgColor.alpha = 0;
+		mcontrols.cameras = [camcontrol];
+
+		mcontrols.visible = false;
+
+		add(mcontrols);
+		#end
+
 		// if (SONG.song == 'South')
 		// FlxG.camera.alpha = 0.7;
 		// UI_camera.zoom = 1;
@@ -1355,9 +1381,6 @@ class PlayState extends MusicBeatState
 					startCountdown();
 			}
 		}
-
-		if (!loadRep)
-			rep = new Replay("na");
 
 		FlxG.stage.addEventListener(KeyboardEvent.KEY_DOWN,handleInput);
 
@@ -1459,6 +1482,9 @@ class PlayState extends MusicBeatState
 
 	function startCountdown():Void
 	{
+		#if android
+		mcontrols.visible = true;
+		#end
 		inCutscene = false;
 
 		generateStaticArrows(0);
@@ -1724,9 +1750,6 @@ class PlayState extends MusicBeatState
 			case 'Bopeebo' | 'Philly Nice' | 'Blammed' | 'Cocoa' | 'Eggnog': allowedToHeadbang = true;
 			default: allowedToHeadbang = false;
 		}
-
-		if (useVideo)
-			GlobalVideo.get().resume();
 		
 		#if windows
 		// Updating Discord Rich Presence (with Time Left)
@@ -2120,17 +2143,6 @@ class PlayState extends MusicBeatState
 			camHUD.visible = !camHUD.visible;
 
 
-		if (useVideo && GlobalVideo.get() != null && !stopUpdate)
-			{		
-				if (GlobalVideo.get().ended && !removedVideo)
-				{
-					remove(videoSprite);
-					FlxG.stage.window.onFocusOut.remove(focusOut);
-					FlxG.stage.window.onFocusIn.remove(focusIn);
-					removedVideo = true;
-				}
-			}
-
 
 		
 		#if windows
@@ -2259,14 +2271,6 @@ class PlayState extends MusicBeatState
 
 		if (FlxG.keys.justPressed.SEVEN)
 		{
-			if (useVideo)
-				{
-					GlobalVideo.get().stop();
-					remove(videoSprite);
-					FlxG.stage.window.onFocusOut.remove(focusOut);
-					FlxG.stage.window.onFocusIn.remove(focusIn);
-					removedVideo = true;
-				}
 			#if windows
 			DiscordClient.changePresence("Chart Editor", null, null, true);
 			#end
@@ -2313,15 +2317,6 @@ class PlayState extends MusicBeatState
 		#if debug
 		if (FlxG.keys.justPressed.SIX)
 		{
-			if (useVideo)
-				{
-					GlobalVideo.get().stop();
-					remove(videoSprite);
-					FlxG.stage.window.onFocusOut.remove(focusOut);
-					FlxG.stage.window.onFocusIn.remove(focusIn);
-					removedVideo = true;
-				}
-
 			FlxG.switchState(new AnimationDebug(SONG.player2));
 			FlxG.stage.removeEventListener(KeyboardEvent.KEY_DOWN,handleInput);
 			#if windows
@@ -2931,25 +2926,9 @@ class PlayState extends MusicBeatState
 	function endSong():Void
 	{
 		FlxG.stage.removeEventListener(KeyboardEvent.KEY_DOWN,handleInput);
-		if (useVideo)
-			{
-				GlobalVideo.get().stop();
-				FlxG.stage.window.onFocusOut.remove(focusOut);
-				FlxG.stage.window.onFocusIn.remove(focusIn);
-				PlayState.instance.remove(PlayState.instance.videoSprite);
-			}
 
 		if (isStoryMode)
 			campaignMisses = misses;
-
-		if (!loadRep)
-			rep.SaveReplay(saveNotes, saveJudge, replayAna);
-		else
-		{
-			PlayStateChangeables.botPlay = false;
-			PlayStateChangeables.scrollSpeed = 1;
-			PlayStateChangeables.useDownscroll = false;
-		}
 
 		if (FlxG.save.data.fpsCap > 290)
 			(cast (Lib.current.getChildAt(0), Main)).setFPSCap(290);
@@ -3622,10 +3601,6 @@ class PlayState extends MusicBeatState
 				}
 
 			public var fuckingVolume:Float = 1;
-			public var useVideo = false;
-
-			public static var webmHandler:WebmHandler;
-
 			public var playingDathing = false;
 
 			public var videoSprite:FlxSprite;
@@ -3651,62 +3626,6 @@ class PlayState extends MusicBeatState
 			}
 
 
-			public function backgroundVideo(source:String) // for background videos
-				{
-					#if cpp
-					useVideo = true;
-			
-					FlxG.stage.window.onFocusOut.add(focusOut);
-					FlxG.stage.window.onFocusIn.add(focusIn);
-
-					var ourSource:String = "assets/videos/daWeirdVid/dontDelete.webm";
-					WebmPlayer.SKIP_STEP_LIMIT = 90;
-					var str1:String = "WEBM SHIT"; 
-					webmHandler = new WebmHandler();
-					webmHandler.source(ourSource);
-					webmHandler.makePlayer();
-					webmHandler.webm.name = str1;
-			
-					GlobalVideo.setWebm(webmHandler);
-
-					GlobalVideo.get().source(source);
-					GlobalVideo.get().clearPause();
-					if (GlobalVideo.isWebm)
-					{
-						GlobalVideo.get().updatePlayer();
-					}
-					GlobalVideo.get().show();
-			
-					if (GlobalVideo.isWebm)
-					{
-						GlobalVideo.get().restart();
-					} else {
-						GlobalVideo.get().play();
-					}
-					
-					var data = webmHandler.webm.bitmapData;
-			
-					videoSprite = new FlxSprite(-470,-30).loadGraphic(data);
-			
-					videoSprite.setGraphicSize(Std.int(videoSprite.width * 1.2));
-			
-					remove(gf);
-					remove(boyfriend);
-					remove(dad);
-					add(videoSprite);
-					add(gf);
-					add(boyfriend);
-					add(dad);
-			
-					trace('poggers');
-			
-					if (!songStarted)
-						webmHandler.pause();
-					else
-						webmHandler.resume();
-					#end
-				}
-
 	function noteMiss(direction:Int = 1, daNote:Note):Void
 	{
 		if (!boyfriend.stunned)
@@ -3718,21 +3637,6 @@ class PlayState extends MusicBeatState
 			}
 			combo = 0;
 			misses++;
-
-			if (daNote != null)
-			{
-				if (!loadRep)
-				{
-					saveNotes.push([daNote.strumTime,0,direction,166 * Math.floor((PlayState.rep.replay.sf / 60) * 1000) / 166]);
-					saveJudge.push("miss");
-				}
-			}
-			else
-				if (!loadRep)
-				{
-					saveNotes.push([Conductor.songPosition,0,direction,166 * Math.floor((PlayState.rep.replay.sf / 60) * 1000) / 166]);
-					saveJudge.push("miss");
-				}
 
 			//var noteDiff:Float = Math.abs(daNote.strumTime - Conductor.songPosition);
 			//var wife:Float = EtternaFunctions.wife3(noteDiff, FlxG.save.data.etternaMode ? 1 : 1.7);

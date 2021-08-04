@@ -19,7 +19,6 @@ import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 import flixel.util.FlxColor;
-import io.newgrounds.NG;
 import lime.app.Application;
 import lime.utils.Assets;
 import flixel.math.FlxMath;
@@ -29,7 +28,7 @@ import flixel.input.FlxKeyManager;
 
 using StringTools;
 
-class KeyBindMenu extends FlxSubState
+class KeyBindMenu extends MusicBeatSubstate
 {
 
     var keyTextDisplay:FlxText;
@@ -86,7 +85,7 @@ class KeyBindMenu extends FlxSubState
         blackBox = new FlxSprite(0,0).makeGraphic(FlxG.width,FlxG.height,FlxColor.BLACK);
         add(blackBox);
 
-        infoText = new FlxText(-10, 580, 1280, 'Current Mode: ${KeyBinds.gamepad ? 'GAMEPAD' : 'KEYBOARD'}. Press TAB to switch\n(${KeyBinds.gamepad ? 'RIGHT Trigger' : 'Escape'} to save, ${KeyBinds.gamepad ? 'LEFT Trigger' : 'Backspace'} to leave without saving. ${KeyBinds.gamepad ? 'START To change a keybind' : ''})', 72);
+        infoText = new FlxText(-10, 580, 1280, #if !android 'Current Mode: ${KeyBinds.gamepad ? 'GAMEPAD' : 'KEYBOARD'}. Press TAB to switch\n(${KeyBinds.gamepad ? 'RIGHT Trigger' : 'Escape'} to save, ${KeyBinds.gamepad ? 'LEFT Trigger' : 'Backspace'} to leave without saving. ${KeyBinds.gamepad ? 'START To change a keybind' : ''})' #else 'A to start binding, B to exit, C to exit without saving' #end, 72);
 		infoText.scrollFactor.set(0, 0);
 		infoText.setFormat("VCR OSD Mono", 24, FlxColor.WHITE, FlxTextAlign.CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		infoText.borderSize = 2;
@@ -106,7 +105,9 @@ class KeyBindMenu extends FlxSubState
         OptionsMenu.instance.acceptInput = false;
 
         textUpdate();
-
+        #if android
+        addVirtualPad(UP_DOWN, A_B_C);
+        #end
 		super.create();
 	}
 
@@ -114,6 +115,15 @@ class KeyBindMenu extends FlxSubState
 
 	override function update(elapsed:Float)
 	{
+        #if android
+        var C = _virtualpad.buttonC.justPressed;
+        var B = _virtualpad.buttonB.justPressed;
+        var A = _virtualpad.buttonA.justPressed;
+        #else
+        var C:Bool = false;
+        var B:Bool = false;
+        var A:Bool = false;
+        #end
         var gamepad:FlxGamepad = FlxG.gamepads.lastActive;
 
         if (frames <= 10)
@@ -122,13 +132,13 @@ class KeyBindMenu extends FlxSubState
         switch(state){
 
             case "select":
-                if (FlxG.keys.justPressed.UP)
+                if (controls.UP_P)
                 {
                     FlxG.sound.play(Paths.sound('scrollMenu'));
                     changeItem(-1);
                 }
 
-                if (FlxG.keys.justPressed.DOWN)
+                if (controls.DOWN_P)
                 {
                     FlxG.sound.play(Paths.sound('scrollMenu'));
                     changeItem(1);
@@ -141,14 +151,14 @@ class KeyBindMenu extends FlxSubState
                     textUpdate();
                 }
 
-                if (FlxG.keys.justPressed.ENTER){
+                if (controls.ACCEPT){
                     FlxG.sound.play(Paths.sound('scrollMenu'));
                     state = "input";
                 }
-                else if(FlxG.keys.justPressed.ESCAPE){
+                else if(FlxG.keys.justPressed.ESCAPE || B){
                     quit();
                 }
-                else if (FlxG.keys.justPressed.BACKSPACE){
+                else if (FlxG.keys.justPressed.BACKSPACE || C){
                     reset();
                 }
                 if (gamepad != null) // GP Logic
@@ -214,12 +224,12 @@ class KeyBindMenu extends FlxSubState
                 }
                 else
                 {
-                    if(FlxG.keys.justPressed.ESCAPE){
+                    if(FlxG.keys.justPressed.ESCAPE || B){
                         keys[curSelected] = tempKey;
                         state = "select";
                         FlxG.sound.play(Paths.sound('confirmMenu'));
                     }
-                    else if(FlxG.keys.justPressed.ENTER){
+                    else if(FlxG.keys.justPressed.ENTER || A){
                         addKey(defaultKeys[curSelected]);
                         save();
                         state = "select";

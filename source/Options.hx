@@ -161,6 +161,26 @@ class GhostTapOption extends Option
 	}
 }
 
+class McontrolsOption extends Option
+{
+	public function new(desc:String)
+	{
+		super();
+		description = desc;
+	}
+
+	public override function press():Bool
+	{
+		FlxG.switchState(new options.CustomControlsState());
+		return false;
+	}
+
+	private override function updateDisplay():String
+	{
+		return "Mobile Controls";
+	}
+}
+
 class AccuracyOption extends Option
 {
 	public function new(desc:String)

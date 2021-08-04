@@ -23,7 +23,6 @@ import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 import flixel.util.FlxColor;
 import flixel.util.FlxTimer;
-import io.newgrounds.NG;
 import lime.app.Application;
 import openfl.Assets;
 
@@ -57,10 +56,6 @@ class TitleState extends MusicBeatState
 		polymod.Polymod.init({modRoot: "mods", dirs: ['introMod']});
 		#end
 		
-		#if sys
-		if (!sys.FileSystem.exists(Sys.getCwd() + "/assets/replays"))
-			sys.FileSystem.createDirectory(Sys.getCwd() + "/assets/replays");
-		#end
 
 		@:privateAccess
 		{
@@ -281,7 +276,7 @@ class TitleState extends MusicBeatState
 
 		var pressedEnter:Bool = controls.ACCEPT;
 
-		#if mobile
+		//#if mobile
 		for (touch in FlxG.touches.list)
 		{
 			if (touch.justPressed)
@@ -289,7 +284,7 @@ class TitleState extends MusicBeatState
 				pressedEnter = true;
 			}
 		}
-		#end
+		//#end
 
 		if (pressedEnter && !transitioning && skippedIntro)
 		{
@@ -448,7 +443,7 @@ class TitleState extends MusicBeatState
 				addMoreText('Tight');
 			// credTextShit.visible = true;
 			case 14:
-				addMoreText('Bar');
+				addMoreText('Bars');
 			// credTextShit.text += '\nNight';
 			case 15:
 				addMoreText('Little man'); // credTextShit.text += '\nFunkin';
